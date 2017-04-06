@@ -1,5 +1,5 @@
 
-%matplotlib inline
+#%matplotlib inline
 
 import os
 import numpy as np
@@ -10,7 +10,7 @@ from sklearn.cluster import KMeans
 from sklearn.mixture import GMM
 from matplotlib.colors import LogNorm
 
-os.chdir("C:\\Users\\skarb\\Desktop\\Github\\W207_P3\\")
+os.chdir("/Users/Admiral/Desktop/W207_P3/")
 
 feature_names = []
 with open('mushroom.map') as fmap:
@@ -89,7 +89,39 @@ clstrs = km.fit (pca_dat)
 print (clstrs.cluster_centers_.shape)
 print (clstrs.cluster_centers_)
 
+#### Sarah's implementation ###
+pca = PCA(n_components=2)
+pca_data = pca.fit_transform(X)
 
+fig = plt.figure(figsize=(10, 5))
+for i in [1,2]:
+    np.random.seed(i)
+    model1 = KMeans(n_clusters=3, n_init=1,init='random')
+    model1.fit(pca_data)
+    labels = model1.labels_
+    centers = model1.cluster_centers_
+    x_centers = [centers[x][0] for x in range(len(centers))]
+    y_centers = [centers[x][1] for x in range(len(centers))]
+    predicted_cluster = model1.predict(pca_data)
+    max_dist = np.zeros(len(centers))
+    for j in range(len(pca_data)):
+        rel_cluster = centers[predicted_cluster[j]]
+        euclid_x2 = (pca_data[j][0]-rel_cluster[0])**2
+        euclid_y2 = (pca_data[j][1]-rel_cluster[1])**2
+        euclid_dist = (euclid_x2 + euclid_y2)**(.5)
+        #print euclid_dist #why the hell is this always 1
+        if euclid_dist > max_dist[predicted_cluster[j]]:
+            max_dist[predicted_cluster[j]]=euclid_dist
+    sub_plot = fig.add_subplot(1,2,i)
+    sub_plot.scatter(pca_data[:,0], pca_data[:,1], c = labels)
+    title_i = "3 Clusters, Random Initialization (seed =" + str(i) + ")"
+    for k in range(len(centers)):
+        cir = plt.Circle(centers[k], radius = max_dist[k], color = 'g', fill = False)
+        sub_plot.add_patch(cir)
+    plt.title(title_i)
+plt.show()
+
+###########
 
 
 
