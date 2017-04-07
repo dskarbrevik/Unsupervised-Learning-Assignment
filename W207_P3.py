@@ -84,56 +84,106 @@ plt.show()
 # Problem 3
 ###############################################################################
 
-km = KMeans (n_clusters=16, init='k-means++')
-clstrs = km.fit (pca_dat)
-print (clstrs.cluster_centers_.shape)
-print (clstrs.cluster_centers_)
+fig = plt.figure(figsize=(10, 30))
+for i in range(16):
 
-#### Sarah's implementation ###
-pca = PCA(n_components=2)
-pca_data = pca.fit_transform(X)
-
-fig = plt.figure(figsize=(10, 5))
-for i in [1,2]:
-    np.random.seed(i)
-    model1 = KMeans(n_clusters=3, n_init=1,init='random')
-    model1.fit(pca_data)
+    model1 = KMeans(n_clusters=i+1)
+    model1.fit(pca_dat)
     labels = model1.labels_
     centers = model1.cluster_centers_
     x_centers = [centers[x][0] for x in range(len(centers))]
     y_centers = [centers[x][1] for x in range(len(centers))]
-    predicted_cluster = model1.predict(pca_data)
+    predicted_cluster = model1.predict(pca_dat)
     max_dist = np.zeros(len(centers))
-    for j in range(len(pca_data)):
+    for j in range(len(pca_dat)):
         rel_cluster = centers[predicted_cluster[j]]
-        euclid_x2 = (pca_data[j][0]-rel_cluster[0])**2
-        euclid_y2 = (pca_data[j][1]-rel_cluster[1])**2
+        euclid_x2 = (pca_dat[j][0]-rel_cluster[0])**2
+        euclid_y2 = (pca_dat[j][1]-rel_cluster[1])**2
         euclid_dist = (euclid_x2 + euclid_y2)**(.5)
         #print euclid_dist #why the hell is this always 1
         if euclid_dist > max_dist[predicted_cluster[j]]:
             max_dist[predicted_cluster[j]]=euclid_dist
-    sub_plot = fig.add_subplot(1,2,i)
-    sub_plot.scatter(pca_data[:,0], pca_data[:,1], c = labels)
-    title_i = "3 Clusters, Random Initialization (seed =" + str(i) + ")"
+    sub_plot = fig.add_subplot(8,2,i+1)
+    sub_plot.scatter(pca_dat[:,0], pca_dat[:,1], c = labels)
+    title_i = str(i+1) + " Clusters"
     for k in range(len(centers)):
         cir = plt.Circle(centers[k], radius = max_dist[k], color = 'g', fill = False)
         sub_plot.add_patch(cir)
     plt.title(title_i)
 plt.show()
 
-###########
+###############################################################################
+# Problem 4
+###############################################################################
+
+model = GMM(n_components=2, covariance_type="full")
+model.fit(pca_dat)
 
 
 
 
+# display predicted scores by the model as a contour plot
+x = np.linspace(-20., 30.)
+y = np.linspace(-20., 40.)
+X, Y = np.meshgrid(x, y)
+XX = np.array([X.ravel(), Y.ravel()]).T
+Z = model.score_samples(XX)
+Z = Z.reshape(X.shape)
+type(XX)
+
+
+model.score_samples(XX)
+CS = plt.contour(X, Y, Z, norm=LogNorm(vmin=1.0, vmax=1000.0),
+                 levels=np.logspace(0, 3, 10))
+CB = plt.colorbar(CS, shrink=0.8, extend='both')
+plt.scatter(pca_dat[:, 0], pca_dat[:, 1], .8)
+
+plt.title('Negative log-likelihood predicted by a GMM')
+plt.axis('tight')
+plt.show()
 
 
 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from sklearn import mixture
 
+n_samples = 300
 
+# generate random sample, two components
+np.random.seed(0)
 
+# generate spherical data centered on (20, 20)
+shifted_gaussian = np.random.randn(n_samples, 2) + np.array([20, 20])
 
+# generate zero centered stretched Gaussian data
+C = np.array([[0., -0.7], [3.5, .7]])
+stretched_gaussian = np.dot(np.random.randn(n_samples, 2), C)
 
+# concatenate the two datasets into the final training set
+X_train = np.vstack([shifted_gaussian, stretched_gaussian])
+
+# fit a Gaussian Mixture Model with two components
+clf = mixture.GaussianMixture(n_components=2, covariance_type='full')
+clf.fit(X_train)
+
+# display predicted scores by the model as a contour plot
+x = np.linspace(-20., 30.)
+y = np.linspace(-20., 40.)
+X, Y = np.meshgrid(x, y)
+XX = np.array([X.ravel(), Y.ravel()]).T
+Z = -clf.score_samples(XX)
+Z = Z.reshape(X.shape)
+
+CS = plt.contour(X, Y, Z, norm=LogNorm(vmin=1.0, vmax=1000.0),
+                 levels=np.logspace(0, 3, 10))
+CB = plt.colorbar(CS, shrink=0.8, extend='both')
+plt.scatter(X_train[:, 0], X_train[:, 1], .8)
+
+plt.title('Negative log-likelihood predicted by a GMM')
+plt.axis('tight')
+plt.show()
 
 
 
