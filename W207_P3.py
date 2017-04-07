@@ -195,19 +195,49 @@ metrics.accuracy_score(test_labels, gmm_results)
 # Problem 6
 ###############################################################################
 
+n_comp = 2
 
-# need different prams for pos and neg?
+# subset the training labels
 pos_labels = np.where(train_labels == 1)
-n_comp = 2
-pca_mod1 = PCA(n_components = n_comp)
-
-
 neg_labels = np.where(train_labels == 0)
-n_comp = 2
-pca_mod2 = PCA(n_components = n_comp)
+
+pca_mod3 = PCA(n_components = n_comp)
+pca_test_data = pca_mod3.fit_transform(test_data)
+
+for covar in ["spherical","diag","tied","full"]:
+
+    #positive data class
+    pca_mod1 = PCA(n_components = n_comp)
+    pca_dat1 = pca_mod1.fit_transform(train_data)
+    pos_pca = pca_dat[pos_labels]
+    model1 = GMM(n_components=4, covariance_type=covar)
+    model1.fit(pos_pca)
+    
+    # negative data class
+    pca_mod2 = PCA(n_components = n_comp)
+    pca_dat2 = pca_mod2.fit_transform(train_data)
+    neg_pca = pca_dat2[neg_labels]
+    model2 = GMM(n_components=4, covariance_type=covar)
+    model2.fit(neg_pca)
 
 
 
+
+pos_score = model1.score(pca_test_data)
+neg_score = model2.score(pca_test_data)
+
+
+gmm_results = np.zeros([1124,])
+for i in range(pos_score.shape[0]):
+    if pos_score[i] > neg_score[i]:
+        gmm_results[i] = 1.0
+    elif pos_score[i] < neg_score[i]:
+        gmm_results[i] = 0.0
+    elif pos_score[i] == neg_score[i]:
+        print("50/50 situation faced")
+        gmm_results[i] = 1.0
+
+metrics.accuracy_score(test_labels, gmm_results)
 
 
 
